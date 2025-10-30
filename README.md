@@ -1,29 +1,160 @@
-# Create T3 App
+# Kanban Board
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+A modern, full-stack Kanban board application with drag-and-drop functionality, built with Next.js 15, Better Auth, and Drizzle ORM.
 
-## What's next? How do I make an app with this?
+## Features
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+- 📋 Board Management - Create and manage multiple boards
+- 📝 Column & Card Management - Organize tasks with customizable columns
+- 🎯 Drag & Drop - Intuitive card movement with visual drop indicators
+- 👥 User Management - Role-based access control (Owner, Admin, Member, Viewer)
+- 🔐 Authentication - Secure email/password authentication with Better Auth
+- 🎨 Modern UI - Clean interface built with Base UI and Tailwind CSS
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+## Tech Stack
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+- **Framework:** Next.js 15.2 (App Router)
+- **Language:** TypeScript
+- **Authentication:** Better Auth
+- **Database:** SQLite with Drizzle ORM
+- **API:** Hono
+- **Styling:** Tailwind CSS 4.0
+- **UI Components:** Base UI
+- **Icons:** Lucide React
+- **Package Manager:** Bun
 
-## Learn More
+## Getting Started
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+### Prerequisites
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+- [Bun](https://bun.sh/) installed on your machine
+- Node.js 20+ (for compatibility)
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
+### Installation
 
-## How do I deploy this?
+1. **Clone the repository**
 
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+```bash
+git clone <repository-url>
+cd kanban-challenge
+```
+
+2. **Install dependencies**
+
+```bash
+bun install
+```
+
+3. **Set up environment variables**
+
+Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and configure the following:
+
+```env
+# Database
+DATABASE_URL="file:./sqlite.db"
+
+# Better-Auth Configuration
+# Generate a secret with: openssl rand -base64 32
+BETTER_AUTH_SECRET="your-secret-key-min-32-characters-long"
+BETTER_AUTH_URL="http://localhost:3000"
+
+# Node Environment
+NODE_ENV="development"
+```
+
+**Important:** Generate a secure secret for `BETTER_AUTH_SECRET`:
+
+```bash
+openssl rand -base64 32
+```
+
+4. **Set up the database**
+
+Push the database schema:
+
+```bash
+bun run db:push
+```
+
+This will create the SQLite database and all necessary tables.
+
+5. **Run the development server**
+
+```bash
+bun run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Available Scripts
+
+- `bun run dev` - Start development server with Turbopack
+- `bun run build` - Build for production
+- `bun run start` - Start production server
+- `bun run lint` - Run ESLint
+- `bun run lint:fix` - Fix ESLint errors
+- `bun run typecheck` - Run TypeScript type checking
+- `bun run format:check` - Check code formatting
+- `bun run format:write` - Format code with Prettier
+- `bun run db:push` - Push database schema changes
+- `bun run db:generate` - Generate Drizzle migrations
+- `bun run db:studio` - Open Drizzle Studio (database GUI)
+
+## Project Structure
+
+```
+src/
+├── app/                    # Next.js app router pages
+│   ├── (auth)/            # Authentication pages
+│   └── (dashboard)/       # Dashboard pages
+├── components/            # Reusable UI components
+│   ├── ui/               # Base UI components
+│   └── sidebar/          # Sidebar navigation
+├── lib/                   # Utilities and API clients
+│   └── api/              # API request functions
+├── server/                # Backend code
+│   ├── api/              # Hono API routes
+│   ├── auth/             # Better Auth configuration
+│   ├── db/               # Drizzle ORM setup
+│   └── services/         # Business logic services
+└── styles/                # Global styles
+```
+
+## Usage
+
+1. **Sign up** for an account at `/sign-up`
+2. **Sign in** at `/sign-in`
+3. **Create a board** from the sidebar
+4. **Add columns** to organize your workflow
+5. **Create cards** and drag them between columns
+6. **Invite team members** (coming soon)
+
+## Development
+
+### Database Management
+
+View and edit your database using Drizzle Studio:
+
+```bash
+bun run db:studio
+```
+
+### Code Quality
+
+Before committing, ensure your code passes all checks:
+
+```bash
+bun run check
+```
+
+This runs both linting and type checking.
+
+## License
+
+MIT
