@@ -15,8 +15,6 @@ export type BoardListItem = {
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
-  role: string;
-  memberCount: number;
   columnCount: number;
 };
 
@@ -99,7 +97,6 @@ export function BoardList({ boards }: BoardListProps) {
 
   const handleViewChange = (mode: ViewMode) => setViewMode(mode);
 
-  const formatRole = (role: string) => role.charAt(0).toUpperCase() + role.slice(1);
 
   const renderBoardCard = (board: BoardListItem) => (
     <li
@@ -135,8 +132,6 @@ export function BoardList({ boards }: BoardListProps) {
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-gray-500">
-        <span>Role: {formatRole(board.role)}</span>
-        <span>Members: {board.memberCount}</span>
         <span>Columns: {board.columnCount}</span>
         <span>
           Updated: {new Date(board.updatedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
@@ -160,8 +155,6 @@ export function BoardList({ boards }: BoardListProps) {
         <div className="font-medium text-gray-900">{board.title}</div>
         <div className="text-sm text-gray-500">{board.description || "No description"}</div>
       </td>
-      <td className="px-4 py-3 text-sm text-gray-500">{formatRole(board.role)}</td>
-      <td className="px-4 py-3 text-sm text-gray-500">{board.memberCount}</td>
       <td className="px-4 py-3 text-sm text-gray-500">{board.columnCount}</td>
       <td className="px-4 py-3 text-sm text-gray-500">
         {new Date(board.updatedAt).toLocaleDateString()}
@@ -230,12 +223,6 @@ export function BoardList({ boards }: BoardListProps) {
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   Board
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Role
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Members
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   Columns

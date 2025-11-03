@@ -2,19 +2,14 @@ import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 
-import { boardRoles } from "~/server/db/schema";
 import {
-  addBoardMember,
   createBoard,
   deleteBoard,
   duplicateBoard,
   getBoardDetail,
-  listBoardMembers,
   listBoardsForUser,
-  removeBoardMember,
   setBoardArchive,
   updateBoard,
-  updateBoardMemberRole,
 } from "~/server/services/board.service";
 import { listBoardColumns } from "~/server/services/column.service";
 import { ServiceError } from "~/server/services/errors";
@@ -30,10 +25,6 @@ const boardIdParams = z.object({
   id: z.string().min(1),
 });
 
-const boardMemberParams = z.object({
-  id: z.string().min(1),
-  userId: z.string().min(1),
-});
 
 const createBoardSchema = z.object({
   title: z.string().min(1).max(255),
@@ -53,16 +44,6 @@ const duplicateSchema = z.object({
   title: z.string().min(1).max(255).optional(),
 });
 
-const memberRoleSchema = z.enum(boardRoles);
-
-const addMemberSchema = z.object({
-  userId: z.string().min(1),
-  role: memberRoleSchema,
-});
-
-const updateMemberRoleSchema = z.object({
-  role: memberRoleSchema,
-});
 
 function handleServiceError(c: Context<AuthContext>, error: unknown) {
   if (error instanceof ServiceError) {
@@ -198,68 +179,5 @@ boardRoutes.delete(
   },
 );
 
-boardRoutes.get(
-  "/:id/members",
-  zValidator("param", boardIdParams),
-  async (c) => {
-    try {
-      const { id } = c.req.valid("param");
-      const user = c.get("user");
-      const members = await listBoardMembers(id, user.id);
-      return jsonSuccess(c, { members });
-    } catch (error) {
-      return handleServiceError(c, error);
-    }
-  },
-);
-
-boardRoutes.post(
-  "/:id/members",
-  zValidator("param", boardIdParams),
-  zValidator("json", addMemberSchema),
-  async (c) => {
-    try {
-      const { id } = c.req.valid("param");
-      const { userId, role } = c.req.valid("json");
-      const actor = c.get("user");
-      const member = await addBoardMember(id, userId, actor.id, role);
-      return jsonSuccess(c, { member }, 201);
-    } catch (error) {
-      return handleServiceError(c, error);
-    }
-  },
-);
-
-boardRoutes.patch(
-  "/:id/members/:userId",
-  zValidator("param", boardMemberParams),
-  zValidator("json", updateMemberRoleSchema),
-  async (c) => {
-    try {
-      const { id, userId } = c.req.valid("param");
-      const { role } = c.req.valid("json");
-      const actor = c.get("user");
-      const member = await updateBoardMemberRole(id, userId, actor.id, role);
-      return jsonSuccess(c, { member });
-    } catch (error) {
-      return handleServiceError(c, error);
-    }
-  },
-);
-
-boardRoutes.delete(
-  "/:id/members/:userId",
-  zValidator("param", boardMemberParams),
-  async (c) => {
-    try {
-      const { id, userId } = c.req.valid("param");
-      const actor = c.get("user");
-      await removeBoardMember(id, userId, actor.id);
-      return jsonSuccess(c, { removed: true });
-    } catch (error) {
-      return handleServiceError(c, error);
-    }
-  },
-);
 
 export { boardRoutes };

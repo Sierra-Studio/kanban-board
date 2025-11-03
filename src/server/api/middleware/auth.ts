@@ -42,13 +42,3 @@ export const authMiddleware = createMiddleware<AuthContext>(async (c, next) => {
   }
 });
 
-export const requireRole = (role: string) => {
-  return createMiddleware<AuthContext>(async (c, next) => {
-    void role;
-    const user = c.get("user");
-    if (!user) {
-      return jsonError(c, "Unauthorized", 401);
-    }
-    await next();
-  });
-};

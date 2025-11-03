@@ -12,3 +12,4 @@ export {
 } from "./card";
 export { ToastProvider, useToast } from "./toast";
 export { Sidepanel } from "./sidepanel";
+export { Avatar } from "./avatar";

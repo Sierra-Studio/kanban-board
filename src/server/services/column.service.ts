@@ -3,9 +3,7 @@ import { and, asc, eq, sql } from "drizzle-orm";
 import { db } from "~/server/db";
 import { cards, columns } from "~/server/db/schema";
 
-import { assertRole, getBoardAccess } from "./board-access";
 import { ServiceError } from "./errors";
-import { canEditColumns, canViewBoard } from "./permissions/board";
 
 type ColumnRecord = typeof columns.$inferSelect;
 
@@ -53,9 +51,6 @@ async function getColumnCardCount(columnId: string) {
 }
 
 export async function listBoardColumns(boardId: string, userId: string) {
-  const { membership } = await getBoardAccess(boardId, userId);
-  assertRole(membership.role, canViewBoard, "Forbidden", "BOARD_FORBIDDEN");
-
   const rows = await db
     .select({
       column: columns,
@@ -80,9 +75,6 @@ export async function renameColumn(columnId: string, userId: string, name: strin
   if (trimmed.length === 0 || trimmed.length > 100) {
     throw new ServiceError("Invalid column name", 400, "INVALID_COLUMN_NAME");
   }
-
-  const { membership } = await getBoardAccess(column.boardId, userId);
-  assertRole(membership.role, canEditColumns, "Insufficient permissions", "COLUMN_FORBIDDEN");
 
   const [updated] = await db
     .update(columns)
@@ -109,9 +101,6 @@ export async function toggleColumnCollapse(
     throw new ServiceError("Column not found", 404, "COLUMN_NOT_FOUND");
   }
 
-  const { membership } = await getBoardAccess(column.boardId, userId);
-  assertRole(membership.role, canEditColumns, "Insufficient permissions", "COLUMN_FORBIDDEN");
-
   const [updated] = await db
     .update(columns)
     .set({ isCollapsed })
@@ -135,9 +124,6 @@ export async function reorderColumns(
   if (!Array.isArray(orderedColumnIds) || orderedColumnIds.length === 0) {
     throw new ServiceError("No columns provided", 400, "INVALID_COLUMN_ORDER");
   }
-
-  const { membership } = await getBoardAccess(boardId, userId);
-  assertRole(membership.role, canEditColumns, "Insufficient permissions", "COLUMN_REORDER_FORBIDDEN");
 
   const existing = await db
     .select()

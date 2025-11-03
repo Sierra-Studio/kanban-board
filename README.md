@@ -84,7 +84,22 @@ bun run db:push
 
 This will create the SQLite database and all necessary tables.
 
-5. **Run the development server**
+5. **Seed the database with demo content** *(Optional)*
+
+Add demo content including the Kanban Admin user and a sample board:
+
+```bash
+bun run db:seed
+```
+
+This creates:
+- 🤖 **Kanban Admin** - A special system user who creates demo content
+- 📋 **Demo Board** - "🚀 Welcome to Your Kanban Journey!" with example cards
+- ✨ **Sample Cards** - Fun, engaging cards showing best practices
+
+The seeding is safe to run multiple times - it will only create content if the Kanban Admin doesn't already exist.
+
+6. **Run the development server**
 
 ```bash
 bun run dev
@@ -105,6 +120,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - `bun run db:push` - Push database schema changes
 - `bun run db:generate` - Generate Drizzle migrations
 - `bun run db:studio` - Open Drizzle Studio (database GUI)
+- `bun run db:seed` - Seed database with demo content (Kanban Admin + demo board)
 
 ## Project Structure
 

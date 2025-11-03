@@ -45,19 +45,11 @@ export default async function BoardDetailPage({
             <p className="mt-1 text-gray-600">{detail.board.description}</p>
           ) : null}
         </div>
-        <div className="rounded-md border border-gray-200 bg-white px-4 py-2 text-sm text-gray-600">
-          <p>
-            Role:{" "}
-            <span className="font-medium capitalize">{detail.board.role}</span>
-          </p>
-          <p>Members: {detail.board.memberCount}</p>
-        </div>
       </div>
 
       <div className="flex-1 overflow-hidden">
         <BoardColumnsManager
           boardId={detail.board.id}
-          role={detail.board.role}
           initialColumns={columns}
         />
       </div>

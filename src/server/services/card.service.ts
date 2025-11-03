@@ -3,9 +3,7 @@ import { and, asc, desc, eq } from "drizzle-orm";
 import { db } from "~/server/db";
 import { cards, columns } from "~/server/db/schema";
 
-import { assertRole, getBoardAccess } from "./board-access";
 import { ServiceError } from "./errors";
-import { canEditColumns, canViewBoard } from "./permissions/board";
 
 const POSITION_GAP = 1000;
 
@@ -62,10 +60,6 @@ async function getCard(cardId: string) {
 }
 
 export async function listCards(columnId: string, userId: string) {
-  const column = await getColumnBoard(columnId);
-  const { membership } = await getBoardAccess(column.boardId, userId);
-  assertRole(membership.role, canViewBoard, "Forbidden", "CARD_FORBIDDEN");
-
   const rows = await db
     .select()
     .from(cards)
@@ -81,8 +75,6 @@ export async function createCard(
   data: { title: string; description?: string | null },
 ) {
   const column = await getColumnBoard(columnId);
-  const { membership } = await getBoardAccess(column.boardId, userId);
-  assertRole(membership.role, canEditColumns, "Insufficient permissions", "CARD_CREATE_FORBIDDEN");
 
   const trimmed = data.title.trim();
   if (!trimmed || trimmed.length > 500) {
@@ -131,10 +123,6 @@ export async function getCardDetail(cardId: string, userId: string) {
     throw new ServiceError("Card not found", 404, "CARD_NOT_FOUND");
   }
 
-  const column = await getColumnBoard(card.columnId);
-  const { membership } = await getBoardAccess(column.boardId, userId);
-  assertRole(membership.role, canViewBoard, "Forbidden", "CARD_FORBIDDEN");
-
   return mapCard(card);
 }
 
@@ -147,10 +135,6 @@ export async function updateCard(
   if (!card) {
     throw new ServiceError("Card not found", 404, "CARD_NOT_FOUND");
   }
-
-  const column = await getColumnBoard(card.columnId);
-  const { membership } = await getBoardAccess(column.boardId, userId);
-  assertRole(membership.role, canEditColumns, "Insufficient permissions", "CARD_UPDATE_FORBIDDEN");
 
   const updates: Partial<typeof cards.$inferInsert> = {};
   if (data.title !== undefined) {
@@ -191,10 +175,6 @@ export async function deleteCard(cardId: string, userId: string) {
     throw new ServiceError("Card not found", 404, "CARD_NOT_FOUND");
   }
 
-  const column = await getColumnBoard(card.columnId);
-  const { membership } = await getBoardAccess(column.boardId, userId);
-  assertRole(membership.role, canEditColumns, "Insufficient permissions", "CARD_DELETE_FORBIDDEN");
-
   await db.delete(cards).where(eq(cards.id, cardId));
 }
 
@@ -211,9 +191,6 @@ export async function moveCard(
 
   const sourceColumn = await getColumnBoard(card.columnId);
   const targetColumn = await getColumnBoard(targetColumnId);
-
-  const { membership } = await getBoardAccess(sourceColumn.boardId, userId);
-  assertRole(membership.role, canEditColumns, "Insufficient permissions", "CARD_MOVE_FORBIDDEN");
 
   if (sourceColumn.boardId !== targetColumn.boardId) {
     throw new ServiceError("Cannot move card across boards", 400, "CARD_CROSS_BOARD_MOVE");
@@ -285,10 +262,6 @@ export async function reorderCards(
   if (!Array.isArray(orderedCardIds) || orderedCardIds.length === 0) {
     throw new ServiceError("No cards provided", 400, "INVALID_CARD_ORDER");
   }
-
-  const column = await getColumnBoard(columnId);
-  const { membership } = await getBoardAccess(column.boardId, userId);
-  assertRole(membership.role, canEditColumns, "Insufficient permissions", "CARD_REORDER_FORBIDDEN");
 
   const existing = await db
     .select({ id: cards.id })

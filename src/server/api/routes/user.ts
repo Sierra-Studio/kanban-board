@@ -15,6 +15,10 @@ const updateProfileSchema = z.object({
   image: z.string().url().nullable().optional(),
 });
 
+const userIdParams = z.object({
+  id: z.string().min(1),
+});
+
 userRoutes.use("*", authMiddleware);
 userRoutes.use("*", rateLimit);
 
@@ -48,6 +52,21 @@ userRoutes.patch(
     }
 
     return jsonSuccess(c, { user: updated });
+  },
+);
+
+userRoutes.get(
+  "/:id",
+  zValidator("param", userIdParams),
+  async (c) => {
+    const { id } = c.req.valid("param");
+    const userRecord = await getUserById(id);
+
+    if (!userRecord) {
+      return jsonError(c, "User not found", 404, "USER_NOT_FOUND");
+    }
+
+    return jsonSuccess(c, { user: userRecord });
   },
 );
 

@@ -27,14 +27,14 @@ function mapUser(record: UserRecord): UserSummary {
 
 export async function getUserById(userId: string): Promise<UserSummary | null> {
   const [row] = await db
-    .select({ user })
+    .select()
     .from(user)
     .where(eq(user.id, userId))
     .limit(1);
 
   if (!row) return null;
 
-  return mapUser(row.user);
+  return mapUser(row);
 }
 
 export async function getUserSafe(userId: string) {

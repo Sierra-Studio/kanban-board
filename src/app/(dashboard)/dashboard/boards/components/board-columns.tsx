@@ -3,7 +3,7 @@
 import { useMemo, useState, type DragEvent } from "react";
 import { Plus, ChevronDown, ChevronRight, Edit2 } from "lucide-react";
 
-import { Button, Input, Sidepanel } from "~/components/ui";
+import { Avatar, Button, Input, Sidepanel } from "~/components/ui";
 import { useToast } from "~/components/ui/toast";
 import { renameColumnRequest, toggleColumnCollapseRequest, reorderColumnsRequest } from "~/lib/api/columns";
 import {
@@ -13,6 +13,7 @@ import {
 } from "~/lib/api/cards";
 import { useBoardDragDrop } from "../hooks/useBoardDragDrop";
 import type { CardResponse } from "~/lib/api/cards";
+import { getUserById, type UserResponse } from "~/lib/api/users";
 
 type ColumnState = {
   id: string;
@@ -28,11 +29,9 @@ type ColumnState = {
 
 type BoardColumnsManagerProps = {
   boardId: string;
-  role: string;
   initialColumns: ColumnState[];
 };
 
-const EDITABLE_ROLES = new Set(["owner", "admin", "member"]);
 
 type DragState =
   | { type: "column"; columnId: string }
@@ -45,8 +44,8 @@ function clampIndex(index: number, length: number) {
   return index;
 }
 
-export function BoardColumnsManager({ boardId, role, initialColumns }: BoardColumnsManagerProps) {
-  const canEdit = useMemo(() => EDITABLE_ROLES.has(role), [role]);
+export function BoardColumnsManager({ boardId, initialColumns }: BoardColumnsManagerProps) {
+  const canEdit = true;
   const { addToast } = useToast();
 
   const [columns, setColumns] = useState<ColumnState[]>(initialColumns);
@@ -55,6 +54,8 @@ export function BoardColumnsManager({ boardId, role, initialColumns }: BoardColu
   const [columnLoadingId, setColumnLoadingId] = useState<string | null>(null);
   const [dragState, setDragState] = useState<DragState>(null);
   const [cardModal, setCardModal] = useState<{ columnId: string; card: CardResponse } | null>(null);
+  const [cardCreator, setCardCreator] = useState<UserResponse | null>(null);
+  const [loadingCreator, setLoadingCreator] = useState(false);
   const [cardModalDraft, setCardModalDraft] = useState<{ title: string; description: string }>({
     title: "",
     description: "",
@@ -195,18 +196,32 @@ export function BoardColumnsManager({ boardId, role, initialColumns }: BoardColu
   };
 
 
-  const openCardModal = (columnId: string, card: CardResponse) => {
+  const openCardModal = async (columnId: string, card: CardResponse) => {
     setCardModal({ columnId, card });
     setCardModalDraft({
       title: card.title,
       description: card.description ?? "",
     });
+    
+    // Fetch creator information
+    setLoadingCreator(true);
+    setCardCreator(null);
+    try {
+      const creator = await getUserById(card.createdBy);
+      setCardCreator(creator);
+    } catch (error) {
+      console.error("Failed to fetch card creator:", error);
+    } finally {
+      setLoadingCreator(false);
+    }
   };
 
   const closeCardModal = () => {
     if (savingModal) return;
     setCardModal(null);
     setCardModalDraft({ title: "", description: "" });
+    setCardCreator(null);
+    setLoadingCreator(false);
   };
 
   const saveCardModal = async () => {
@@ -470,7 +485,33 @@ export function BoardColumnsManager({ boardId, role, initialColumns }: BoardColu
         open={!!cardModal}
         onOpenChange={(open) => !open && closeCardModal()}
         title="Edit Card"
-        description={cardModal ? `Created ${new Date(cardModal.card.createdAt).toLocaleString()}` : undefined}
+        description={
+          cardModal ? (
+            <div className="flex items-center gap-3">
+              {loadingCreator ? (
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <div className="w-6 h-6 bg-gray-200 rounded-full animate-pulse" />
+                  <span>Loading creator...</span>
+                </div>
+              ) : cardCreator ? (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Avatar 
+                    src={cardCreator.image} 
+                    name={cardCreator.name} 
+                    size="sm" 
+                  />
+                  <span>
+                    Created by <span className="font-medium">{cardCreator.name || cardCreator.email}</span> on {new Date(cardModal.card.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-sm text-gray-500">
+                  Created {new Date(cardModal.card.createdAt).toLocaleString()}
+                </span>
+              )}
+            </div>
+          ) : undefined
+        }
       >
         <div className="space-y-4">
           <div>

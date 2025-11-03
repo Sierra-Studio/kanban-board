@@ -139,8 +139,6 @@ export const posts = createTable(
 // BOARD MANAGEMENT TABLES
 // ============================================================================
 
-export const boardRoles = ["owner", "admin", "member", "viewer"] as const;
-export type BoardRole = (typeof boardRoles)[number];
 
 export const boards = createTable(
   "board",
@@ -172,35 +170,6 @@ export const boards = createTable(
   ],
 );
 
-export const boardMembers = createTable(
-  "board_member",
-  (d) => ({
-    id: d
-      .text()
-      .primaryKey()
-      .default(sql`(lower(hex(randomblob(16))))`),
-    boardId: d
-      .text()
-      .notNull()
-      .references(() => boards.id, { onDelete: "cascade" }),
-    userId: d
-      .text()
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    role: d
-      .text({ enum: boardRoles })
-      .notNull(),
-    joinedAt: d
-      .integer({ mode: "timestamp" })
-      .notNull()
-      .default(sql`(unixepoch())`),
-  }),
-  (t) => [
-    index("board_member_board_id_idx").on(t.boardId),
-    index("board_member_user_id_idx").on(t.userId),
-    uniqueIndex("board_member_unique").on(t.boardId, t.userId),
-  ],
-);
 
 export const columns = createTable(
   "column",

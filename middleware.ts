@@ -1,24 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "~/server/db";
-import * as schema from "~/server/db/schema";
-
-// Create a Better-Auth instance for middleware
-const auth = betterAuth({
-  database: drizzleAdapter(db, {
-    provider: "sqlite",
-    schema: {
-      user: schema.user,
-      session: schema.session,
-      account: schema.account,
-      verification: schema.verification,
-    },
-  }),
-  secret: process.env.BETTER_AUTH_SECRET!,
-  baseURL: process.env.BETTER_AUTH_URL!,
-});
+import { auth } from "~/server/auth/config";
 
 const publicRoutes = ["/", "/sign-in", "/sign-up", "/api/auth"];
 const authRoutes = ["/sign-in", "/sign-up"];
