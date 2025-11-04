@@ -37,6 +37,18 @@ export async function getUserById(userId: string): Promise<UserSummary | null> {
   return mapUser(row);
 }
 
+export async function getUserByEmail(email: string): Promise<UserSummary | null> {
+  const [row] = await db
+    .select()
+    .from(user)
+    .where(eq(user.email, email))
+    .limit(1);
+
+  if (!row) return null;
+
+  return mapUser(row);
+}
+
 export async function getUserSafe(userId: string) {
   const userRecord = await getUserById(userId);
   if (!userRecord) {

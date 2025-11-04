@@ -28,7 +28,8 @@ export async function runSeeding(): Promise<{ success: boolean; message: string 
     const adminUserId = await createKanbanAdmin();
 
     // Step 2: Create demo board with content
-    const demoBoardId = await createDemoBoard(adminUserId);
+    // For initial seeding, Kanban Admin owns the board and creates the cards
+    const demoBoardId = await createDemoBoard(adminUserId, adminUserId);
 
     const duration = Date.now() - startTime;
     const successMessage = `✨ Seeding completed successfully in ${duration}ms!\n🤖 Kanban Admin created (ID: ${adminUserId})\n📋 Demo board created (ID: ${demoBoardId})`;

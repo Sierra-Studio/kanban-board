@@ -37,6 +37,12 @@ export function SignUpForm() {
         addToast(result.error.message ?? "Failed to sign up", "error");
       } else {
         addToast("Account created successfully!", "success");
+
+        // Create demo board in background (non-blocking)
+        fetch("/api/user/onboard", { method: "POST" }).catch((err) => {
+          console.error("Failed to create demo board:", err);
+        });
+
         // Auto sign in after signup
         router.push("/dashboard");
       }

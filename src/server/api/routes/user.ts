@@ -7,6 +7,7 @@ import { rateLimit } from "../middleware/rate-limit";
 import { jsonError, jsonSuccess } from "../response";
 import type { AuthContext } from "../types";
 import { getUserById, updateUserProfile } from "~/server/services/user.service";
+import { onboardNewUser } from "~/server/services/user-onboarding";
 
 const userRoutes = new Hono<AuthContext>();
 
@@ -54,6 +55,20 @@ userRoutes.patch(
     return jsonSuccess(c, { user: updated });
   },
 );
+
+userRoutes.post("/onboard", async (c) => {
+  const sessionUser = c.get("user");
+
+  try {
+    await onboardNewUser(sessionUser.id);
+    return jsonSuccess(c, { onboarded: true });
+  } catch (error) {
+    console.error("Failed to onboard user:", error);
+    // Return success anyway - user can create boards manually
+    // We don't want to fail the request if demo board creation fails
+    return jsonSuccess(c, { onboarded: false });
+  }
+});
 
 userRoutes.get(
   "/:id",

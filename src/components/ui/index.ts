@@ -13,3 +13,4 @@ export {
 export { ToastProvider, useToast } from "./toast";
 export { Sidepanel } from "./sidepanel";
 export { Avatar } from "./avatar";
+export { DropdownMenu, DropdownMenuItem } from "./dropdown-menu";

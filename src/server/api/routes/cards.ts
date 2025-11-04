@@ -135,7 +135,7 @@ cardRoutes.delete(
       const { id } = c.req.valid("param");
       const user = c.get("user");
       await deleteCard(id, user.id);
-      return jsonSuccess(c, { deleted: true });
+      return jsonSuccess(c, {});
     } catch (error) {
       return handleServiceError(c, error);
     }

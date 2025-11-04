@@ -12,7 +12,7 @@ export type UserResponse = {
 };
 
 export async function getUserById(userId: string): Promise<UserResponse> {
-  const result = await apiFetch<{ user: UserResponse }>(`/api/users/${userId}`, {
+  const result = await apiFetch<{ user: UserResponse }>(`/api/user/${userId}`, {
     method: "GET",
   });
 
@@ -20,7 +20,7 @@ export async function getUserById(userId: string): Promise<UserResponse> {
 }
 
 export async function getCurrentUser(): Promise<UserResponse> {
-  const result = await apiFetch<{ user: UserResponse }>(`/api/users/me`, {
+  const result = await apiFetch<{ user: UserResponse }>(`/api/user/me`, {
     method: "GET",
   });
 

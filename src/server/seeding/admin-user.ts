@@ -9,10 +9,14 @@ export async function createKanbanAdmin(): Promise<string> {
   console.log("🤖 Creating Kanban Admin user...");
 
   try {
+    // Generate a unique ID for the admin user
+    const adminUserId = crypto.randomUUID();
+
     // Create the admin user
     const [adminUser] = await db
       .insert(user)
       .values({
+        id: adminUserId,
         email: KANBAN_ADMIN_EMAIL,
         name: KANBAN_ADMIN_NAME,
         emailVerified: true,
@@ -26,6 +30,7 @@ export async function createKanbanAdmin(): Promise<string> {
 
     // Create an account record for the admin (email/password auth)
     await db.insert(account).values({
+      id: crypto.randomUUID(),
       userId: adminUser.id,
       accountId: adminUser.id,
       providerId: "credential",

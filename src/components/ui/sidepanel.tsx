@@ -7,9 +7,10 @@ type SidepanelProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title?: string;
-  description?: string;
+  description?: string | ReactNode;
   children: ReactNode;
   className?: string;
+  hideCloseButton?: boolean;
 };
 
 export function Sidepanel({
@@ -18,7 +19,8 @@ export function Sidepanel({
   title,
   description,
   children,
-  className
+  className,
+  hideCloseButton = false,
 }: SidepanelProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -37,7 +39,7 @@ export function Sidepanel({
         >
           <div className="flex h-full flex-col">
             <div className="flex items-start justify-between border-b border-gray-200 px-6 py-4">
-              <div>
+              <div className="flex-1">
                 {title && (
                   <Dialog.Title className="text-lg font-semibold text-gray-900">
                     {title}
@@ -49,9 +51,11 @@ export function Sidepanel({
                   </Dialog.Description>
                 )}
               </div>
-              <Dialog.Close className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
-                <X className="h-5 w-5" />
-              </Dialog.Close>
+              {!hideCloseButton && (
+                <Dialog.Close className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+                  <X className="h-5 w-5" />
+                </Dialog.Close>
+              )}
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 py-4">

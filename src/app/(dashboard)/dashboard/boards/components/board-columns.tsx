@@ -1,11 +1,21 @@
 "use client";
 
 import { useMemo, useState, type DragEvent } from "react";
-import { Plus, ChevronDown, ChevronRight, Edit2 } from "lucide-react";
+import {
+  Plus,
+  ChevronDown,
+  ChevronRight,
+  Edit2,
+  Search,
+  X,
+} from "lucide-react";
 
-import { Avatar, Button, Input, Sidepanel } from "~/components/ui";
+import { Button, Input, Sidepanel } from "~/components/ui";
 import { useToast } from "~/components/ui/toast";
-import { renameColumnRequest, toggleColumnCollapseRequest, reorderColumnsRequest } from "~/lib/api/columns";
+import {
+  renameColumnRequest,
+  toggleColumnCollapseRequest,
+} from "~/lib/api/columns";
 import {
   createCardRequest,
   deleteCardRequest,
@@ -13,7 +23,8 @@ import {
 } from "~/lib/api/cards";
 import { useBoardDragDrop } from "../hooks/useBoardDragDrop";
 import type { CardResponse } from "~/lib/api/cards";
-import { getUserById, type UserResponse } from "~/lib/api/users";
+import { KanbanCard } from "./kanban-card";
+import { KanbanCardSidepanel } from "./kanban-card-sidepanel";
 
 type ColumnState = {
   id: string;
@@ -32,19 +43,16 @@ type BoardColumnsManagerProps = {
   initialColumns: ColumnState[];
 };
 
-
-type DragState =
-  | { type: "column"; columnId: string }
-  | { type: "card"; cardId: string; sourceColumnId: string } 
-  | null;
-
 function clampIndex(index: number, length: number) {
   if (index < 0) return 0;
   if (index > length) return length;
   return index;
 }
 
-export function BoardColumnsManager({ boardId, initialColumns }: BoardColumnsManagerProps) {
+export function BoardColumnsManager({
+  boardId,
+  initialColumns,
+}: BoardColumnsManagerProps) {
   const canEdit = true;
   const { addToast } = useToast();
 
@@ -52,15 +60,11 @@ export function BoardColumnsManager({ boardId, initialColumns }: BoardColumnsMan
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
   const [columnDraft, setColumnDraft] = useState("");
   const [columnLoadingId, setColumnLoadingId] = useState<string | null>(null);
-  const [dragState, setDragState] = useState<DragState>(null);
-  const [cardModal, setCardModal] = useState<{ columnId: string; card: CardResponse } | null>(null);
-  const [cardCreator, setCardCreator] = useState<UserResponse | null>(null);
-  const [loadingCreator, setLoadingCreator] = useState(false);
-  const [cardModalDraft, setCardModalDraft] = useState<{ title: string; description: string }>({
-    title: "",
-    description: "",
-  });
-  const [savingModal, setSavingModal] = useState(false);
+  const [cardModal, setCardModal] = useState<{
+    columnId: string;
+    card: CardResponse;
+  } | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Card drag and drop hook
   const {
@@ -78,57 +82,20 @@ export function BoardColumnsManager({ boardId, initialColumns }: BoardColumnsMan
     (message) => addToast(message, "error"),
   );
 
-  const handleColumnDragStart = (columnId: string, event: DragEvent<HTMLDivElement>) => {
-    if (!canEdit) return;
-    setDragState({ type: "column", columnId });
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", columnId);
-  };
-
-  const handleColumnDrop = async (targetColumnId: string) => {
-    if (dragState?.type !== "column") return;
-    const sourceId = dragState.columnId;
-    if (sourceId === targetColumnId) {
-      setDragState(null);
-      return;
+  // Filter columns based on search term (intentional bug: using === for exact match)
+  const filteredColumns = useMemo(() => {
+    if (!searchTerm) {
+      return columns;
     }
 
-    const sourceIndex = columns.findIndex((column) => column.id === sourceId);
-    const targetIndex = columns.findIndex((column) => column.id === targetColumnId);
-    if (sourceIndex < 0 || targetIndex < 0) {
-      setDragState(null);
-      return;
-    }
-
-    const updatedColumns = [...columns];
-    const [removed] = updatedColumns.splice(sourceIndex, 1);
-    if (!removed) {
-      setDragState(null);
-      return;
-    }
-    updatedColumns.splice(targetIndex, 0, removed);
-    setColumns(updatedColumns);
-
-    try {
-      await reorderColumnsRequest(boardId, updatedColumns.map((column) => column.id));
-      addToast("Columns reordered", "success");
-    } catch (error) {
-      console.error("Column reorder error", error);
-      addToast(
-        error instanceof Error ? error.message : "Failed to reorder columns",
-        "error",
-      );
-      setColumns(columns);
-    } finally {
-      setDragState(null);
-    }
-  };
-
-  const handleColumnDragOver = (event: DragEvent<HTMLDivElement>) => {
-    if (!canEdit) return;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-  };
+    return columns.map((column) => ({
+      ...column,
+      cards: column.cards.filter((card) => {
+        // Intentional bug: using === instead of toLowerCase().includes()
+        return card.title === searchTerm || card.description === searchTerm;
+      }),
+    }));
+  }, [columns, searchTerm]);
 
   const startEditingColumn = (column: ColumnState) => {
     setEditingColumnId(column.id);
@@ -175,15 +142,25 @@ export function BoardColumnsManager({ boardId, initialColumns }: BoardColumnsMan
     if (!canEdit) return;
     setColumnLoadingId(column.id);
     try {
-      const updated = await toggleColumnCollapseRequest(column.id, !column.isCollapsed);
+      const updated = await toggleColumnCollapseRequest(
+        column.id,
+        !column.isCollapsed,
+      );
       setColumns((prev) =>
         prev.map((current) =>
           current.id === column.id
-            ? { ...current, isCollapsed: updated.isCollapsed, updatedAt: updated.updatedAt }
+            ? {
+                ...current,
+                isCollapsed: updated.isCollapsed,
+                updatedAt: updated.updatedAt,
+              }
             : current,
         ),
       );
-      addToast(updated.isCollapsed ? "Column collapsed" : "Column expanded", "success");
+      addToast(
+        updated.isCollapsed ? "Column collapsed" : "Column expanded",
+        "success",
+      );
     } catch (error) {
       console.error("Toggle column collapse error", error);
       addToast(
@@ -195,80 +172,50 @@ export function BoardColumnsManager({ boardId, initialColumns }: BoardColumnsMan
     }
   };
 
-
-  const openCardModal = async (columnId: string, card: CardResponse) => {
+  const openCardModal = (columnId: string, card: CardResponse) => {
     setCardModal({ columnId, card });
-    setCardModalDraft({
-      title: card.title,
-      description: card.description ?? "",
-    });
-    
-    // Fetch creator information
-    setLoadingCreator(true);
-    setCardCreator(null);
-    try {
-      const creator = await getUserById(card.createdBy);
-      setCardCreator(creator);
-    } catch (error) {
-      console.error("Failed to fetch card creator:", error);
-    } finally {
-      setLoadingCreator(false);
-    }
   };
 
   const closeCardModal = () => {
-    if (savingModal) return;
     setCardModal(null);
-    setCardModalDraft({ title: "", description: "" });
-    setCardCreator(null);
-    setLoadingCreator(false);
   };
 
-  const saveCardModal = async () => {
+  const saveCardModal = async (title: string, description: string) => {
     if (!cardModal || !canEdit) return;
     const { card } = cardModal;
-    const title = cardModalDraft.title.trim();
-    const description = cardModalDraft.description.trim();
 
     if (!title) {
       addToast("Title is required", "error");
       return;
     }
 
-    setSavingModal(true);
-    try {
-      const updated = await updateCardRequest(card.id, {
-        title,
-        description: description || null,
-      });
+    const updated = await updateCardRequest(card.id, {
+      title,
+      description: description || null,
+    });
 
-      setColumns((prev) =>
-        prev.map((column) =>
-          column.id === updated.columnId
-            ? {
-                ...column,
-                cards: column.cards.map((item) => (item.id === updated.id ? updated : item)),
-              }
-            : column,
-        ),
-      );
+    setColumns((prev) =>
+      prev.map((column) =>
+        column.id === updated.columnId
+          ? {
+              ...column,
+              cards: column.cards.map((item) =>
+                item.id === updated.id ? updated : item,
+              ),
+            }
+          : column,
+      ),
+    );
 
-      addToast("Card updated", "success");
-      closeCardModal();
-    } catch (error) {
-      console.error("Update card error", error);
-      addToast(
-        error instanceof Error ? error.message : "Failed to update card",
-        "error",
-      );
-    } finally {
-      setSavingModal(false);
-    }
+    addToast("Card updated", "success");
+    closeCardModal();
   };
 
   const deleteCard = async (columnId: string, cardId: string) => {
     if (!canEdit) return;
-    const confirmDelete = window.confirm("Delete this card? This action cannot be undone.");
+    const confirmDelete = window.confirm(
+      "Delete this card? This action cannot be undone.",
+    );
     if (!confirmDelete) return;
 
     try {
@@ -294,8 +241,41 @@ export function BoardColumnsManager({ boardId, initialColumns }: BoardColumnsMan
     }
   };
 
+  const duplicateCard = async () => {
+    if (!cardModal || !canEdit) return;
+    const { card, columnId } = cardModal;
+
+    try {
+      const duplicatedCard = await createCardRequest(columnId, {
+        title: `${card.title} (Copy)`,
+        description: card.description || undefined,
+      });
+
+      setColumns((prev) =>
+        prev.map((column) => {
+          if (column.id !== columnId) return column;
+          return {
+            ...column,
+            cards: [...column.cards, duplicatedCard],
+            cardCount: column.cards.length + 1,
+          };
+        }),
+      );
+
+      addToast("Card duplicated successfully", "success");
+    } catch (error) {
+      console.error("Duplicate card error", error);
+      addToast(
+        error instanceof Error ? error.message : "Failed to duplicate card",
+        "error",
+      );
+    }
+  };
+
   const [createCardDialogOpen, setCreateCardDialogOpen] = useState(false);
-  const [createCardColumnId, setCreateCardColumnId] = useState<string | null>(null);
+  const [createCardColumnId, setCreateCardColumnId] = useState<string | null>(
+    null,
+  );
   const [newCardTitle, setNewCardTitle] = useState("");
   const [newCardDescription, setNewCardDescription] = useState("");
   const [isCreatingCard, setIsCreatingCard] = useState(false);
@@ -343,61 +323,94 @@ export function BoardColumnsManager({ boardId, initialColumns }: BoardColumnsMan
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-4 h-full" style={{ gridAutoRows: '100%' }}>
-        {columns.map((column) => {
+      {/* Search bar */}
+      <div className="mb-4 flex items-center gap-2">
+        <div className="relative flex-1 gap-1 border-b border-gray-200 px-1 py-2.5">
+          <Search className="pointer-events-none absolute top-1/2 left-4 z-10 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search cards... (exact match)"
+            className="block w-full pl-9"
+          />
+        </div>
+        {searchTerm && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setSearchTerm("")}
+            className="flex items-center gap-1"
+          >
+            <X className="h-4 w-4" />
+            Clear
+          </Button>
+        )}
+      </div>
+
+      <div
+        className="grid h-full gap-4"
+        style={{
+          gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))`,
+          gridAutoRows: "100%",
+        }}
+      >
+        {filteredColumns.map((column) => {
           const isEditing = editingColumnId === column.id;
           const isLoading = columnLoadingId === column.id;
 
           return (
             <div
               key={column.id}
-              className={`group relative rounded-lg bg-gray-100 flex flex-col min-h-0 ${
-                dragState?.type === "column" && dragState.columnId === column.id
-                  ? "ring-2 ring-blue-500"
-                  : ""
-              }`}
-              draggable={canEdit}
-              onDragStart={(event) => handleColumnDragStart(column.id, event)}
-              onDragOver={handleColumnDragOver}
-              onDrop={() => handleColumnDrop(column.id)}
+              className="group relative flex min-h-0 flex-col rounded-lg bg-gray-100"
             >
-              <div className="flex items-end justify-between gap-2 px-3 py-2.5 border-b border-gray-200">
+              <div className="flex items-end justify-between gap-2 border-b border-gray-200 px-3 py-2.5">
                 {isEditing ? (
                   <Input
                     value={columnDraft}
                     onChange={(event) => setColumnDraft(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        saveColumnName(column.id);
+                      } else if (event.key === "Escape") {
+                        cancelEditingColumn();
+                      }
+                    }}
                     disabled={isLoading}
                     autoFocus
                   />
                 ) : (
-                  <div className="flex items-baseline gap-2 flex-1">
-                    <h3 className="text-base font-semibold text-gray-900">{column.name}</h3>
+                  <div className="flex flex-1 items-baseline gap-2">
+                    <h3 className="text-base font-semibold text-gray-900">
+                      {column.name}
+                    </h3>
                     <p className="text-xs text-gray-500">
-                      {column.cards.length} {column.cards.length === 1 ? 'card' : 'cards'}
+                      {column.cards.length}{" "}
+                      {column.cards.length === 1 ? "card" : "cards"}
                     </p>
                   </div>
                 )}
 
-                {canEdit ? (
+                {canEdit && !isEditing ? (
                   <div className="flex gap-1">
                     <button
                       onClick={() => startEditingColumn(column)}
-                      className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                      className="p-1 text-gray-400 transition-colors hover:text-gray-600"
                       title="Rename column"
                       disabled={isLoading}
                     >
-                      <Edit2 className="w-4 h-4" />
+                      <Edit2 className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => toggleColumnCollapse(column)}
-                      className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                      className="p-1 text-gray-400 transition-colors hover:text-gray-600"
                       title={column.isCollapsed ? "Expand" : "Collapse"}
                       disabled={isLoading}
                     >
                       {column.isCollapsed ? (
-                        <ChevronRight className="w-4 h-4" />
+                        <ChevronRight className="h-4 w-4" />
                       ) : (
-                        <ChevronDown className="w-4 h-4" />
+                        <ChevronDown className="h-4 w-4" />
                       )}
                     </button>
                   </div>
@@ -406,56 +419,59 @@ export function BoardColumnsManager({ boardId, initialColumns }: BoardColumnsMan
 
               {!column.isCollapsed && (
                 <div
-                  className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2"
-                  onDragOver={(event) => handleCardDropAreaDragOver(column.id, event)}
+                  className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3"
+                  onDragOver={(event) =>
+                    handleCardDropAreaDragOver(column.id, event)
+                  }
                   onDrop={handleCardDrop}
                 >
                   {column.cards.map((card, index) => (
                     <div key={card.id} className="relative">
                       {/* Drop indicator above card */}
-                      {dropIndicator?.columnId === column.id && dropIndicator.index === index && (
-                        <div className="absolute -top-1 left-0 right-0 h-0.5 bg-blue-500 rounded-full" />
-                      )}
+                      {dropIndicator?.columnId === column.id &&
+                        dropIndicator.index === index && (
+                          <div className="absolute -top-1 right-0 left-0 h-0.5 rounded-full bg-blue-500" />
+                        )}
 
-                      <div
-                        className={`rounded-lg bg-white p-3 shadow-sm hover:shadow-md transition-all cursor-pointer border border-gray-200 hover:border-gray-300 ${
-                          cardDragState?.type === "card" && cardDragState.cardId === card.id
-                            ? "opacity-50"
-                            : ""
-                        }`}
-                        draggable={canEdit}
-                        onDragStart={(event) => handleCardDragStart(column.id, card, event)}
-                        onDragOver={(event) => handleCardDragOver(column.id, index, event)}
+                      <KanbanCard
+                        card={card}
+                        isDragging={
+                          cardDragState?.type === "card" &&
+                          cardDragState.cardId === card.id
+                        }
+                        canEdit={canEdit}
+                        onCardClick={() => openCardModal(column.id, card)}
+                        onDragStart={(event) =>
+                          handleCardDragStart(column.id, card, event)
+                        }
+                        onDragOver={(event) =>
+                          handleCardDragOver(column.id, index, event)
+                        }
                         onDrop={handleCardDrop}
-                        onClick={() => openCardModal(column.id, card)}
-                      >
-                        <p className="text-sm font-medium text-gray-900 leading-snug">{card.title}</p>
-                        {card.description ? (
-                          <p className="mt-2 text-xs text-gray-500 line-clamp-2 leading-relaxed">{card.description}</p>
-                        ) : null}
-                      </div>
+                      />
 
                       {/* Drop indicator below last card */}
                       {dropIndicator?.columnId === column.id &&
-                       dropIndicator.index === index + 1 &&
-                       index === column.cards.length - 1 && (
-                        <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-blue-500 rounded-full" />
-                      )}
+                        dropIndicator.index === index + 1 &&
+                        index === column.cards.length - 1 && (
+                          <div className="absolute right-0 -bottom-1 left-0 h-0.5 rounded-full bg-blue-500" />
+                        )}
                     </div>
                   ))}
 
                   {/* Drop indicator for empty column or end of list */}
-                  {column.cards.length === 0 && dropIndicator?.columnId === column.id && (
-                    <div className="h-0.5 bg-blue-500 rounded-full" />
-                  )}
+                  {column.cards.length === 0 &&
+                    dropIndicator?.columnId === column.id && (
+                      <div className="h-0.5 rounded-full bg-blue-500" />
+                    )}
 
                   {/* Add card button - shows on hover */}
                   {canEdit && (
                     <button
                       onClick={() => handleOpenCreateCard(column.id)}
-                      className="w-full p-1.5 rounded-md border-2 border-dashed border-gray-300 text-gray-400 hover:border-gray-400 hover:text-gray-600 transition-all opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1"
+                      className="flex w-full items-center justify-center gap-1 rounded-md border-2 border-dashed border-gray-300 p-1.5 text-gray-400 opacity-0 transition-all group-hover:opacity-100 hover:border-gray-400 hover:text-gray-600"
                     >
-                      <Plus className="w-3 h-3" />
+                      <Plus className="h-3 w-3" />
                       <span className="text-xs">Add a card</span>
                     </button>
                   )}
@@ -463,8 +479,12 @@ export function BoardColumnsManager({ boardId, initialColumns }: BoardColumnsMan
               )}
 
               {isEditing && canEdit ? (
-                <div className="p-2 border-t border-gray-200 flex items-center justify-end gap-1 text-sm">
-                  <Button size="sm" variant="secondary" onClick={cancelEditingColumn}>
+                <div className="flex items-center justify-end gap-1 border-t border-gray-200 p-2 text-sm">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={cancelEditingColumn}
+                  >
                     Cancel
                   </Button>
                   <Button
@@ -481,86 +501,20 @@ export function BoardColumnsManager({ boardId, initialColumns }: BoardColumnsMan
         })}
       </div>
 
-      <Sidepanel
+      <KanbanCardSidepanel
+        card={cardModal?.card ?? null}
         open={!!cardModal}
-        onOpenChange={(open) => !open && closeCardModal()}
-        title="Edit Card"
-        description={
-          cardModal ? (
-            <div className="flex items-center gap-3">
-              {loadingCreator ? (
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <div className="w-6 h-6 bg-gray-200 rounded-full animate-pulse" />
-                  <span>Loading creator...</span>
-                </div>
-              ) : cardCreator ? (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Avatar 
-                    src={cardCreator.image} 
-                    name={cardCreator.name} 
-                    size="sm" 
-                  />
-                  <span>
-                    Created by <span className="font-medium">{cardCreator.name || cardCreator.email}</span> on {new Date(cardModal.card.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              ) : (
-                <span className="text-sm text-gray-500">
-                  Created {new Date(cardModal.card.createdAt).toLocaleString()}
-                </span>
-              )}
-            </div>
-          ) : undefined
-        }
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Title</label>
-            <Input
-              value={cardModalDraft.title}
-              onChange={(event) =>
-                setCardModalDraft((prev) => ({ ...prev, title: event.target.value }))
-              }
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Description</label>
-            <textarea
-              className="block h-32 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={cardModalDraft.description}
-              onChange={(event) =>
-                setCardModalDraft((prev) => ({ ...prev, description: event.target.value }))
-              }
-            />
-          </div>
-
-          <div className="mt-6 flex items-center justify-between">
-            {cardModal && canEdit && (
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  if (cardModal) {
-                    deleteCard(cardModal.columnId, cardModal.card.id);
-                    closeCardModal();
-                  }
-                }}
-                className="text-red-600 hover:text-red-700"
-              >
-                Delete Card
-              </Button>
-            )}
-            <div className="ml-auto flex items-center gap-2">
-              <Button variant="secondary" onClick={closeCardModal} disabled={savingModal}>
-                Cancel
-              </Button>
-              <Button onClick={saveCardModal} disabled={savingModal}>
-                {savingModal ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </Sidepanel>
+        onClose={closeCardModal}
+        onSave={saveCardModal}
+        onDelete={() => {
+          if (cardModal) {
+            deleteCard(cardModal.columnId, cardModal.card.id);
+            closeCardModal();
+          }
+        }}
+        onDuplicate={duplicateCard}
+        canEdit={canEdit}
+      />
 
       {/* Create Card Sidepanel */}
       <Sidepanel
@@ -571,13 +525,15 @@ export function BoardColumnsManager({ boardId, initialColumns }: BoardColumnsMan
       >
         <div className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Title *</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Title *
+            </label>
             <Input
               value={newCardTitle}
               onChange={(event) => setNewCardTitle(event.target.value)}
               placeholder="Enter card title"
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   handleCreateCard();
                 }
@@ -587,9 +543,11 @@ export function BoardColumnsManager({ boardId, initialColumns }: BoardColumnsMan
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Description</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Description
+            </label>
             <textarea
-              className="block h-32 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="block h-32 w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:outline-none"
               value={newCardDescription}
               onChange={(event) => setNewCardDescription(event.target.value)}
               placeholder="Add a description (optional)"

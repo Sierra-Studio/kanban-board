@@ -3,9 +3,14 @@ import { boards, columns, cards } from "~/server/db/schema";
 import { generateDemoBoardContent } from "./demo-content";
 
 /**
- * Create the demo board with all its content for the Kanban Admin
+ * Create the demo board with all its content
+ * @param boardOwnerId - The user who will own the board
+ * @param cardCreatorId - The user who created the cards (typically Kanban Admin)
  */
-export async function createDemoBoard(adminUserId: string): Promise<string> {
+export async function createDemoBoard(
+  boardOwnerId: string,
+  cardCreatorId: string
+): Promise<string> {
   console.log("🎨 Creating demo board with engaging content...");
 
   try {
@@ -17,7 +22,7 @@ export async function createDemoBoard(adminUserId: string): Promise<string> {
       .values({
         title: demoContent.boardTitle,
         description: demoContent.boardDescription,
-        userId: adminUserId,
+        userId: boardOwnerId,
         isArchived: false,
       })
       .returning();
@@ -56,7 +61,7 @@ export async function createDemoBoard(adminUserId: string): Promise<string> {
               title: cardData.title,
               description: cardData.description,
               position: cardData.position,
-              createdBy: adminUserId,
+              createdBy: cardCreatorId,
             }))
           );
         }

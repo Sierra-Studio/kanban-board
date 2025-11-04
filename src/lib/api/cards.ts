@@ -40,7 +40,7 @@ export async function updateCardRequest(cardId: string, payload: { title?: strin
 }
 
 export async function deleteCardRequest(cardId: string) {
-  await apiFetch<{ deleted: boolean }>(`/api/cards/${cardId}`, {
+  await apiFetch(`/api/cards/${cardId}`, {
     method: "DELETE",
   });
 }
