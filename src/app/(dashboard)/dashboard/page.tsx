@@ -20,12 +20,12 @@ export default async function DashboardPage() {
           Welcome to Kanban Board!
         </h2>
         <p className="text-gray-600 max-w-md mb-8">
-          Get started by creating your first board. Use the "Create New Board" button
+          Get started by creating your first board. Use the &ldquo;Create New Board&rdquo; button
           in the sidebar to begin organizing your tasks.
         </p>
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <Plus className="w-4 h-4" />
-          <span>Click "Create New Board" in the sidebar to get started</span>
+          <span>Click &ldquo;Create New Board&rdquo; in the sidebar to get started</span>
         </div>
       </div>
     );
@@ -35,10 +35,10 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       <div className="space-y-2">
         <h2 className="text-3xl font-bold text-gray-900">
-          Welcome back, {session?.user.name || "User"}!
+          Welcome back, {session?.user.name ?? "User"}!
         </h2>
         <p className="text-gray-600">
-          Here's an overview of your workspace activity.
+          Here&apos;s an overview of your workspace activity.
         </p>
       </div>
 
@@ -100,7 +100,7 @@ export default async function DashboardPage() {
               <div className="flex items-center gap-2 pt-4">
                 <Plus className="w-4 h-4 text-gray-400" />
                 <span className="text-sm text-gray-500">
-                  Use the "Create New Board" button in the sidebar to add more boards
+                  Use the &ldquo;Create New Board&rdquo; button in the sidebar to add more boards
                 </span>
               </div>
             </div>
@@ -114,7 +114,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-600">
-              You can unarchive a board from the board's settings page, or create a new one using the sidebar.
+              You can unarchive a board from the board&apos;s settings page, or create a new one using the sidebar.
             </p>
           </CardContent>
         </Card>
@@ -127,7 +127,7 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-500">
-            Activity feed coming soon. You'll be able to see recent changes, comments, and updates from your team here.
+            Activity feed coming soon. You&apos;ll be able to see recent changes, comments, and updates from your team here.
           </p>
         </CardContent>
       </Card>

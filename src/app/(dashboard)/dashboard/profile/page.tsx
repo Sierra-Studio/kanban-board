@@ -66,7 +66,7 @@ export default async function ProfilePage() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-500">
-            Profile editing functionality coming soon. You'll be able to update your name, avatar, and other preferences here.
+            Profile editing functionality coming soon. You&apos;ll be able to update your name, avatar, and other preferences here.
           </p>
         </CardContent>
       </Card>
@@ -78,7 +78,7 @@ export default async function ProfilePage() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-500">
-            Password management and security settings coming soon. You'll be able to change your password and enable two-factor authentication here.
+            Password management and security settings coming soon. You&apos;ll be able to change your password and enable two-factor authentication here.
           </p>
         </CardContent>
       </Card>

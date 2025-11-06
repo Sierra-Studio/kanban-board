@@ -114,7 +114,7 @@ export function BoardList({ boards }: BoardListProps) {
             ) : null}
           </h3>
           <p className="mt-2 max-h-12 overflow-hidden text-sm text-gray-600">
-            {board.description || "No description"}
+            {board.description ?? "No description"}
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
@@ -153,7 +153,7 @@ export function BoardList({ boards }: BoardListProps) {
     <tr key={board.id} className="border-b last:border-b-0">
       <td className="px-4 py-3">
         <div className="font-medium text-gray-900">{board.title}</div>
-        <div className="text-sm text-gray-500">{board.description || "No description"}</div>
+        <div className="text-sm text-gray-500">{board.description ?? "No description"}</div>
       </td>
       <td className="px-4 py-3 text-sm text-gray-500">{board.columnCount}</td>
       <td className="px-4 py-3 text-sm text-gray-500">

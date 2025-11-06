@@ -50,7 +50,7 @@ export function CreateBoardForm() {
       const description = values.description?.trim();
       await createBoard({
         title,
-        description: description ? description : undefined,
+        description: description ?? undefined,
       });
       addToast("Board created successfully", "success");
       reset();

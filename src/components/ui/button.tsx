@@ -24,7 +24,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       lg: "h-12 px-6 text-lg",
     };
 
-    const classes = `${baseStyles} ${variants[variant]} ${sizes[size]} ${className || ""}`;
+    const classes = `${baseStyles} ${variants[variant]} ${sizes[size]} ${className ?? ""}`;
 
     return (
       <button

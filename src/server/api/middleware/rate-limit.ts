@@ -17,9 +17,7 @@ const globalForRateLimit = globalThis as unknown as {
 };
 
 const store = globalForRateLimit.apiRateLimit ?? new Map<string, RateState>();
-if (!globalForRateLimit.apiRateLimit) {
-  globalForRateLimit.apiRateLimit = store;
-}
+globalForRateLimit.apiRateLimit ??= store;
 
 const getKey = (c: Context<ApiContext>) => {
   const user = c.get("user");

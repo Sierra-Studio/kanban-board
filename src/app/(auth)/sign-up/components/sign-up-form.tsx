@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signUp } from "~/lib/auth-client";
-import { Button, Input, Form } from "~/components/ui";
+import { Button, Input } from "~/components/ui";
 import { useToast } from "~/components/ui/toast";
 import { signUpSchema, type SignUpData } from "~/lib/validations/auth";
 

@@ -17,7 +17,7 @@ export function SignInForm() {
   const [loading, setLoading] = useState(false);
 
   // Get the redirect URL from query params
-  const from = searchParams.get("from") || "/dashboard";
+  const from = searchParams.get("from") ?? "/dashboard";
 
   const {
     register,

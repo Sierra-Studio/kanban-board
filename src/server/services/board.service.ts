@@ -1,14 +1,12 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 
 import { db } from "~/server/db";
 import {
   boards,
   columns,
-  user,
 } from "~/server/db/schema";
 
 import { ServiceError } from "./errors";
-import { getUserSafe } from "./user.service";
 import {
   listBoardColumns,
   mapColumnRecord,
@@ -23,7 +21,6 @@ const DEFAULT_COLUMNS = [
 ];
 
 type BoardRecord = typeof boards.$inferSelect;
-type ColumnRecord = typeof columns.$inferSelect;
 
 export type BoardSummary = {
   id: string;

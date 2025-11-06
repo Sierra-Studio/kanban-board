@@ -62,7 +62,7 @@ export default async function SettingsPage() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-500">
-            Preference settings coming soon. You'll be able to customize themes, notifications, and display options here.
+            Preference settings coming soon. You&apos;ll be able to customize themes, notifications, and display options here.
           </p>
         </CardContent>
       </Card>

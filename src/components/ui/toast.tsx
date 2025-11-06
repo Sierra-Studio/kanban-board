@@ -43,7 +43,7 @@ function ToastList() {
           >
             <Toast.Content className="flex items-center justify-between w-full">
               <Toast.Description className="mr-4">
-                {toastData.description || toastData.message}
+                {toastData.description ?? toastData.message}
               </Toast.Description>
               <Toast.Close className="text-white hover:opacity-80 text-xl leading-none">
                 ×

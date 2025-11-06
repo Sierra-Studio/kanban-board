@@ -11,7 +11,7 @@ export const authMiddleware = createMiddleware<AuthContext>(async (c, next) => {
       headers: c.req.raw.headers,
     });
 
-    if (!sessionData || !sessionData.user || !sessionData.session) {
+    if (!sessionData?.user || !sessionData?.session) {
       return jsonError(c, "Unauthorized", 401);
     }
 

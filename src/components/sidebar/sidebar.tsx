@@ -34,13 +34,13 @@ export function Sidebar({ boards, userName, userEmail }: SidebarProps) {
   const [newBoardDescription, setNewBoardDescription] = useState("");
 
   // Extract board ID from pathname if on a board page
-  const currentBoardId = pathname.match(/\/dashboard\/boards\/([^/]+)/)?.[1];
+  const currentBoardId = /\/dashboard\/boards\/([^/]+)/.exec(pathname)?.[1];
 
   const handleLogout = async () => {
     try {
       await signOut();
       router.push("/sign-in");
-    } catch (error) {
+    } catch {
       addToast("Failed to logout", "error");
     }
   };
@@ -167,11 +167,11 @@ export function Sidebar({ boards, userName, userEmail }: SidebarProps) {
           </button>
 
           {/* User info */}
-          {(userName || userEmail) && (
+          {(userName ?? userEmail) && (
             <div className="mt-4 pt-4 border-t border-gray-800">
               <p className="text-xs text-gray-400 px-3">Signed in as</p>
               <p className="text-sm text-white px-3 truncate font-medium">
-                {userName || userEmail}
+                {userName ?? userEmail}
               </p>
             </div>
           )}
@@ -204,7 +204,7 @@ export function Sidebar({ boards, userName, userEmail }: SidebarProps) {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
-                      handleCreateBoard();
+                      void handleCreateBoard();
                     }
                   }}
                 />

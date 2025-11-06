@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type DragEvent } from "react";
+import { useMemo, useState } from "react";
 import {
   Plus,
   ChevronDown,
@@ -43,14 +43,8 @@ type BoardColumnsManagerProps = {
   initialColumns: ColumnState[];
 };
 
-function clampIndex(index: number, length: number) {
-  if (index < 0) return 0;
-  if (index > length) return length;
-  return index;
-}
-
 export function BoardColumnsManager({
-  boardId,
+  boardId: _boardId,
   initialColumns,
 }: BoardColumnsManagerProps) {
   const canEdit = true;
@@ -248,7 +242,7 @@ export function BoardColumnsManager({
     try {
       const duplicatedCard = await createCardRequest(columnId, {
         title: `${card.title} (Copy)`,
-        description: card.description || undefined,
+        description: card.description ?? undefined,
       });
 
       setColumns((prev) =>
@@ -371,7 +365,7 @@ export function BoardColumnsManager({
                     onChange={(event) => setColumnDraft(event.target.value)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter") {
-                        saveColumnName(column.id);
+                        void saveColumnName(column.id);
                       } else if (event.key === "Escape") {
                         cancelEditingColumn();
                       }
@@ -508,7 +502,7 @@ export function BoardColumnsManager({
         onSave={saveCardModal}
         onDelete={() => {
           if (cardModal) {
-            deleteCard(cardModal.columnId, cardModal.card.id);
+            void deleteCard(cardModal.columnId, cardModal.card.id);
             closeCardModal();
           }
         }}
@@ -535,7 +529,7 @@ export function BoardColumnsManager({
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  handleCreateCard();
+                  void handleCreateCard();
                 }
               }}
               autoFocus

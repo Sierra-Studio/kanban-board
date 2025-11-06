@@ -59,7 +59,7 @@ async function getCard(cardId: string) {
   return row ?? null;
 }
 
-export async function listCards(columnId: string, userId: string) {
+export async function listCards(columnId: string, _userId: string) {
   const rows = await db
     .select()
     .from(cards)
@@ -74,7 +74,7 @@ export async function createCard(
   userId: string,
   data: { title: string; description?: string | null },
 ) {
-  const column = await getColumnBoard(columnId);
+  await getColumnBoard(columnId);
 
   const trimmed = data.title.trim();
   if (!trimmed || trimmed.length > 500) {
@@ -117,7 +117,7 @@ export async function createCard(
   return mapCard(created);
 }
 
-export async function getCardDetail(cardId: string, userId: string) {
+export async function getCardDetail(cardId: string, _userId: string) {
   const card = await getCard(cardId);
   if (!card) {
     throw new ServiceError("Card not found", 404, "CARD_NOT_FOUND");
@@ -169,7 +169,7 @@ export async function updateCard(
   return mapCard(updated);
 }
 
-export async function deleteCard(cardId: string, userId: string) {
+export async function deleteCard(cardId: string, _userId: string) {
   const card = await getCard(cardId);
   if (!card) {
     throw new ServiceError("Card not found", 404, "CARD_NOT_FOUND");

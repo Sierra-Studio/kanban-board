@@ -50,7 +50,7 @@ async function getColumnCardCount(columnId: string) {
   return Number(result[0]?.value ?? 0);
 }
 
-export async function listBoardColumns(boardId: string, userId: string) {
+export async function listBoardColumns(boardId: string, _userId: string) {
   const rows = await db
     .select({
       column: columns,
