@@ -1,5 +1,7 @@
 "use client";
 
+import { peekSessionStatus } from "~/lib/auth-client";
+
 export type SuccessResponse<T> = {
   success: true;
   data: T;
@@ -14,6 +16,8 @@ export type ErrorResponse = {
 export type ApiResponse<T> = SuccessResponse<T> | ErrorResponse;
 
 export async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
+  await peekSessionStatus();
+
   const response = await fetch(url, {
     ...init,
     headers: {

@@ -1,6 +1,7 @@
 import { createMiddleware } from "hono/factory";
 
 import { auth } from "~/server/auth/config";
+import { runSessionConsistencyCheck } from "~/server/auth/session-consistency";
 
 import { jsonError } from "../response";
 import type { ApiSession, ApiUser, AuthContext } from "../types";
@@ -14,6 +15,8 @@ export const authMiddleware = createMiddleware<AuthContext>(async (c, next) => {
     if (!sessionData?.user || !sessionData?.session) {
       return jsonError(c, "Unauthorized", 401);
     }
+
+    await runSessionConsistencyCheck(c.req.raw.headers);
 
     const user: ApiUser = {
       id: sessionData.user.id,
@@ -41,4 +44,3 @@ export const authMiddleware = createMiddleware<AuthContext>(async (c, next) => {
     return jsonError(c, "Authentication failed", 401);
   }
 });
-

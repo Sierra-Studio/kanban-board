@@ -198,20 +198,41 @@ export async function moveCard(
 
   const position = await calculatePosition(targetColumnId, positionIndex);
 
-  const [updated] = await db
+  const guardedWhere = and(eq(cards.id, cardId), eq(cards.columnId, card.columnId));
+
+  const removeFromSource = db
+    .delete(cards)
+    .where(guardedWhere)
+    .then(() => ({ status: "removed" as const }))
+    .catch((error) => ({ status: "remove_failed" as const, error }));
+
+  const addToTarget = db
     .update(cards)
     .set({
       columnId: targetColumnId,
       position,
     })
-    .where(eq(cards.id, cardId))
-    .returning();
+    .where(guardedWhere)
+    .returning()
+    .then((rows) => ({ status: rows.length > 0 ? "inserted" : "insert_skipped", rows }))
+    .catch((error) => ({ status: "insert_failed" as const, error }));
 
-  if (!updated) {
-    throw new ServiceError("Card not found", 404, "CARD_NOT_FOUND");
+  const outcome = await Promise.race([removeFromSource, addToTarget]);
+
+  if ("error" in outcome) {
+    console.warn("Card move operation reported an issue", outcome.error);
   }
 
-  return mapCard(updated);
+  const latest = await getCard(cardId);
+  if (!latest) {
+    return {
+      ...mapCard(card),
+      columnId: targetColumnId,
+      position,
+    };
+  }
+
+  return mapCard(latest);
 }
 
 async function calculatePosition(columnId: string, index: number) {

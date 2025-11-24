@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { auth } from "~/server/auth/config";
+import { runSessionConsistencyCheck } from "~/server/auth/session-consistency";
 
 const publicRoutes = ["/", "/sign-in", "/sign-up", "/api/auth"];
 const authRoutes = ["/sign-in", "/sign-up"];
 
 export async function middleware(request: NextRequest) {
+  await runSessionConsistencyCheck(request.headers);
+
   const { pathname } = request.nextUrl;
 
   // Allow public routes and auth API endpoints

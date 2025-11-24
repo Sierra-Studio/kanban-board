@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signUp } from "~/lib/auth-client";
-import { Button, Input } from "~/components/ui";
+import { peekSessionStatus, signUp } from "~/lib/auth-client";
+import { Button, Input, Form } from "~/components/ui";
 import { useToast } from "~/components/ui/toast";
 import { signUpSchema, type SignUpData } from "~/lib/validations/auth";
 
@@ -39,9 +39,15 @@ export function SignUpForm() {
         addToast("Account created successfully!", "success");
 
         // Create demo board in background (non-blocking)
-        fetch("/api/user/onboard", { method: "POST" }).catch((err) => {
-          console.error("Failed to create demo board:", err);
-        });
+        peekSessionStatus()
+          .catch((err) => {
+            console.warn("Session peek before onboarding failed", err);
+          })
+          .finally(() => {
+            fetch("/api/user/onboard", { method: "POST" }).catch((err) => {
+              console.error("Failed to create demo board:", err);
+            });
+          });
 
         // Auto sign in after signup
         router.push("/dashboard");
@@ -116,4 +122,3 @@ export function SignUpForm() {
     </form>
   );
 }
-

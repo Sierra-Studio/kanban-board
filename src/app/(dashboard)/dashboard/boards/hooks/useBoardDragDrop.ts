@@ -1,5 +1,5 @@
 import { useState, type DragEvent } from "react";
-import { moveCardRequest } from "~/lib/api/cards";
+import { listCardsRequest, moveCardRequest } from "~/lib/api/cards";
 import type { CardResponse } from "~/lib/api/cards";
 
 type ColumnState = {
@@ -33,6 +33,51 @@ export function useBoardDragDrop(
 ) {
   const [dragState, setDragState] = useState<DragState>(null);
   const [dropIndicator, setDropIndicator] = useState<DropIndicator>(null);
+
+  async function refreshColumnsAfterMove(sourceId: string, targetId: string) {
+    if (sourceId === targetId) {
+      const updatedCards = await listCardsRequest(sourceId);
+      setColumns((prev) =>
+        prev.map((column) =>
+          column.id === sourceId
+            ? {
+                ...column,
+                cards: updatedCards,
+                cardCount: updatedCards.length,
+              }
+            : column,
+        ),
+      );
+      return;
+    }
+
+    const [sourceCards, targetCards] = await Promise.all([
+      listCardsRequest(sourceId),
+      listCardsRequest(targetId),
+    ]);
+
+    setColumns((prev) =>
+      prev.map((column) => {
+        if (column.id === sourceId) {
+          return {
+            ...column,
+            cards: sourceCards,
+            cardCount: sourceCards.length,
+          };
+        }
+
+        if (column.id === targetId) {
+          return {
+            ...column,
+            cards: targetCards,
+            cardCount: targetCards.length,
+          };
+        }
+
+        return column;
+      }),
+    );
+  }
 
   // Card drag handlers
   const handleCardDragStart = (
@@ -117,17 +162,8 @@ export function useBoardDragDrop(
       toColumnId: targetColumnId,
       index: clampedIndex,
     })
-      .then((updatedCard) => {
-        setColumns((prev) =>
-          prev.map((column) =>
-            column.id === targetColumnId
-              ? {
-                  ...column,
-                  cards: column.cards.map((item) => (item.id === updatedCard.id ? updatedCard : item)),
-                }
-              : column,
-          ),
-        );
+      .then(async () => {
+        await refreshColumnsAfterMove(sourceColumnId, targetColumnId);
         onSuccess("Card moved");
       })
       .catch((error) => {

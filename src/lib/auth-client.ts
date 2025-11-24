@@ -12,3 +12,16 @@ export const {
   signOut,
   useSession,
 } = authClient;
+
+export async function peekSessionStatus(): Promise<void> {
+  try {
+    await authClient.getSession({
+      query: {
+        disableCookieCache: true,
+        disableRefresh: true,
+      },
+    });
+  } catch (error) {
+    console.warn("Session status probe failed", error);
+  }
+}

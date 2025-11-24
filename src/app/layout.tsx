@@ -4,6 +4,10 @@ import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ToastProvider } from "~/components/ui/toast";
 
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Kanban Board",
   description: "A simple and intuitive Kanban board",
