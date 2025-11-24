@@ -5,6 +5,7 @@ import { zValidator } from "@hono/zod-validator";
 import {
   createCard,
   deleteCard,
+  duplicateCard,
   getCardDetail,
   listCards,
   moveCard,
@@ -95,20 +96,16 @@ columnCardRoutes.post(
   },
 );
 
-cardRoutes.get(
-  "/:id",
-  zValidator("param", cardParams),
-  async (c) => {
-    try {
-      const { id } = c.req.valid("param");
-      const user = c.get("user");
-      const card = await getCardDetail(id, user.id);
-      return jsonSuccess(c, { card });
-    } catch (error) {
-      return handleServiceError(c, error);
-    }
-  },
-);
+cardRoutes.get("/:id", zValidator("param", cardParams), async (c) => {
+  try {
+    const { id } = c.req.valid("param");
+    const user = c.get("user");
+    const card = await getCardDetail(id, user.id);
+    return jsonSuccess(c, { card });
+  } catch (error) {
+    return handleServiceError(c, error);
+  }
+});
 
 cardRoutes.patch(
   "/:id",
@@ -127,20 +124,16 @@ cardRoutes.patch(
   },
 );
 
-cardRoutes.delete(
-  "/:id",
-  zValidator("param", cardParams),
-  async (c) => {
-    try {
-      const { id } = c.req.valid("param");
-      const user = c.get("user");
-      await deleteCard(id, user.id);
-      return jsonSuccess(c, {});
-    } catch (error) {
-      return handleServiceError(c, error);
-    }
-  },
-);
+cardRoutes.delete("/:id", zValidator("param", cardParams), async (c) => {
+  try {
+    const { id } = c.req.valid("param");
+    const user = c.get("user");
+    await deleteCard(id, user.id);
+    return jsonSuccess(c, {});
+  } catch (error) {
+    return handleServiceError(c, error);
+  }
+});
 
 cardRoutes.post(
   "/:id/move",
@@ -168,6 +161,20 @@ cardRoutes.post(
       const user = c.get("user");
       const cards = await reorderCards(columnId, user.id, cardIds);
       return jsonSuccess(c, { cards });
+    } catch (error) {
+      return handleServiceError(c, error);
+    }
+  },
+);
+
+cardRoutes.post(
+  "/:id/duplicate",
+  zValidator("param", cardParams),
+  async (c) => {
+    try {
+      const { id } = c.req.valid("param");
+      const card = await duplicateCard(id);
+      return jsonSuccess(c, { card }, 201);
     } catch (error) {
       return handleServiceError(c, error);
     }

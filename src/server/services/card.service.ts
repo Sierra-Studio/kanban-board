@@ -85,7 +85,11 @@ export async function createCard(
   if (data.description !== undefined) {
     const trimmedDescription = data.description?.trim() ?? "";
     if (trimmedDescription.length > 10_000) {
-      throw new ServiceError("Description too long", 400, "INVALID_CARD_DESCRIPTION");
+      throw new ServiceError(
+        "Description too long",
+        400,
+        "INVALID_CARD_DESCRIPTION",
+      );
     }
     description = trimmedDescription ? trimmedDescription : null;
   }
@@ -147,7 +151,11 @@ export async function updateCard(
   if (data.description !== undefined) {
     const trimmedDescription = data.description?.trim() ?? "";
     if (trimmedDescription.length > 10_000) {
-      throw new ServiceError("Description too long", 400, "INVALID_CARD_DESCRIPTION");
+      throw new ServiceError(
+        "Description too long",
+        400,
+        "INVALID_CARD_DESCRIPTION",
+      );
     }
     updates.description = trimmedDescription ? trimmedDescription : null;
   }
@@ -193,12 +201,19 @@ export async function moveCard(
   const targetColumn = await getColumnBoard(targetColumnId);
 
   if (sourceColumn.boardId !== targetColumn.boardId) {
-    throw new ServiceError("Cannot move card across boards", 400, "CARD_CROSS_BOARD_MOVE");
+    throw new ServiceError(
+      "Cannot move card across boards",
+      400,
+      "CARD_CROSS_BOARD_MOVE",
+    );
   }
 
   const position = await calculatePosition(targetColumnId, positionIndex);
 
-  const guardedWhere = and(eq(cards.id, cardId), eq(cards.columnId, card.columnId));
+  const guardedWhere = and(
+    eq(cards.id, cardId),
+    eq(cards.columnId, card.columnId),
+  );
 
   const removeFromSource = db
     .delete(cards)
@@ -214,7 +229,10 @@ export async function moveCard(
     })
     .where(guardedWhere)
     .returning()
-    .then((rows) => ({ status: rows.length > 0 ? "inserted" : "insert_skipped", rows }))
+    .then((rows) => ({
+      status: rows.length > 0 ? "inserted" : "insert_skipped",
+      rows,
+    }))
     .catch((error) => ({ status: "insert_failed" as const, error }));
 
   const outcome = await Promise.race([removeFromSource, addToTarget]);
@@ -254,7 +272,10 @@ async function calculatePosition(columnId: string, index: number) {
   return (index + 1) * POSITION_GAP;
 }
 
-async function rebalancePositions(columnId: string, rows?: { id: string; position: number }[]) {
+async function rebalancePositions(
+  columnId: string,
+  rows?: { id: string; position: number }[],
+) {
   const list =
     rows ??
     (await db
@@ -296,7 +317,11 @@ export async function reorderCards(
 
   const invalid = orderedCardIds.some((id) => !existingIds.includes(id));
   if (invalid) {
-    throw new ServiceError("Invalid card identifiers", 400, "INVALID_CARD_ORDER");
+    throw new ServiceError(
+      "Invalid card identifiers",
+      400,
+      "INVALID_CARD_ORDER",
+    );
   }
 
   await db.transaction(async (tx) => {
@@ -319,7 +344,10 @@ export async function reorderCards(
   return reordered.map(mapCard);
 }
 
-export async function duplicateCards(sourceBoardId: string, targetBoardId: string) {
+export async function duplicateCards(
+  sourceBoardId: string,
+  targetBoardId: string,
+) {
   if (sourceBoardId === targetBoardId) return;
 
   const sourceColumns = await db
@@ -363,4 +391,18 @@ export async function duplicateCards(sourceBoardId: string, targetBoardId: strin
       })),
     );
   }
+}
+
+export async function duplicateCard(cardId: string) {
+  const card = await getCard(cardId);
+  if (!card) {
+    throw new ServiceError("Card not found", 404, "CARD_NOT_FOUND");
+  }
+
+  const newCard = await createCard(card.columnId, card.createdBy, {
+    title: `${card.title} (Copy)`,
+    description: card.description,
+  });
+
+  return newCard;
 }

@@ -19,6 +19,7 @@ import {
 import {
   createCardRequest,
   deleteCardRequest,
+  duplicateCardRequest,
   updateCardRequest,
 } from "~/lib/api/cards";
 import { useBoardDragDrop } from "../hooks/useBoardDragDrop";
@@ -240,10 +241,7 @@ export function BoardColumnsManager({
     const { card, columnId } = cardModal;
 
     try {
-      const duplicatedCard = await createCardRequest(columnId, {
-        title: `${card.title} (Copy)`,
-        description: card.description ?? undefined,
-      });
+      const duplicatedCard = await duplicateCardRequest(card.id);
 
       setColumns((prev) =>
         prev.map((column) => {
