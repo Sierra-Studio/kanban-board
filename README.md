@@ -95,6 +95,7 @@ bun run db:seed
 This creates:
 - 🤖 **Kanban Admin** - A special system user who creates demo content
 - 📋 **Demo Board** - "🚀 Welcome to Your Kanban Journey!" with example cards
+- 🌪️ **Crowded Board** - "This is where everyone dropped their daily tasks" packed with thousands of oversized cards for stress testing
 - ✨ **Sample Cards** - Fun, engaging cards showing best practices
 
 The seeding is safe to run multiple times - it will only create content if the Kanban Admin doesn't already exist.
@@ -121,6 +122,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - `bun run db:generate` - Generate Drizzle migrations
 - `bun run db:studio` - Open Drizzle Studio (database GUI)
 - `bun run db:seed` - Seed database with demo content (Kanban Admin + demo board)
+  - Automatically provisions the Crowded board for new accounts so you can test UI performance under heavy load.
 
 ## Project Structure
 

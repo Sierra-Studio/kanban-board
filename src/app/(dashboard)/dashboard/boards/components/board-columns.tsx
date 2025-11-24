@@ -325,7 +325,7 @@ export function BoardColumnsManager({
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search cards... (exact match)"
+            placeholder="Search cards..."
             className="block w-full pl-9"
           />
         </div>
