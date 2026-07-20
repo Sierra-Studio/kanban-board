@@ -1,0 +1,37 @@
+# Development overrides — auto-merged by `docker compose up`.
+# Bind-mounts the source and runs both services with hot reload.
+# For a production-style run (no reload, baked build) use only the base file:
+#   docker compose -f docker-compose.yml up --build
+services:
+  api:
+    # Bind-mount the source so uvicorn --reload picks up code changes.
+    # Named api-data volume still holds the SQLite DB at /data.
+    volumes:
+      - ./api:/app
+      - api-data:/data
+    command:
+      - "sh"
+      - "-c"
+      - "alembic upgrade head && python -m app.seeding.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app"
+
+  web:
+    build:
+      # Use the dev stage (has node_modules, runs `next dev`) instead of the prod runner.
+      target: dev
+    environment:
+      NODE_ENV: "development"
+    command:
+      - "npm"
+      - "run"
+      - "dev"
+      - "--"
+      - "--port"
+      - "3000"
+      - "--hostname"
+      - "0.0.0.0"
+    volumes:
+      # Bind-mount source for Fast Refresh; keep the image's node_modules and
+      # .next via anonymous volumes so the host doesn't shadow them.
+      - ./web:/app
+      - /app/node_modules
+      - /app/.next

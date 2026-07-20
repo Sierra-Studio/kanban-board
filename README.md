@@ -1,178 +1,112 @@
-# Kanban Board
+# Kanban Board (API + Web)
 
-A modern, full-stack Kanban board application with drag-and-drop functionality, built with Next.js 15, Better Auth, and Drizzle ORM.
+A Kanban board application split into two independently deployable services:
 
-## Features
+- **`api/`** — the backend + database: **Python, FastAPI, SQLAlchemy, Alembic, SQLite**.
+- **`web/`** — the frontend: **Next.js 15 (App Router), React 19, Tailwind CSS 4**.
 
-- 📋 Board Management - Create and manage multiple boards
-- 📝 Column & Card Management - Organize tasks with customizable columns
-- 🎯 Drag & Drop - Intuitive card movement with visual drop indicators
-- 👥 User Management - Role-based access control (Owner, Admin, Member, Viewer)
-- 🔐 Authentication - Secure email/password authentication with Better Auth
-- 🎨 Modern UI - Clean interface built with Base UI and Tailwind CSS
+Previously this was a single Next.js monolith (Hono API routes + Drizzle ORM +
+Better Auth, all in one process). It has been split so the API owns the database
+and all business logic, and the web app is a pure client that talks to the API
+over HTTP.
 
-## Tech Stack
+```
+kanban-board/
+├── api/     # FastAPI service (auth, boards, columns, cards, seeding, migrations)
+├── web/     # Next.js frontend
+└── docs/    # Product/feature docs
+```
 
-- **Framework:** Next.js 15.2 (App Router)
-- **Language:** TypeScript
-- **Authentication:** Better Auth
-- **Database:** SQLite with Drizzle ORM
-- **API:** Hono
-- **Styling:** Tailwind CSS 4.0
-- **UI Components:** Base UI
-- **Icons:** Lucide React
-- **Package Manager:** Bun
+## Architecture
 
-## Getting Started
+```
+┌──────────────┐        HTTP (JSON, cookie auth)        ┌────────────────────┐
+│  Next.js web │  ───────────────────────────────────▶ │  FastAPI API        │
+│  (port 3000) │  ◀───────────────────────────────────  │  (port 8000)        │
+└──────────────┘                                        │  SQLAlchemy + SQLite│
+                                                        └────────────────────┘
+```
 
-### Prerequisites
+- **Auth**: session-cookie based. The API issues an `httponly` cookie on
+  sign-in/sign-up; the browser sends it back with `credentials: "include"`.
+  The Next.js middleware and Server Components validate the session by calling
+  the API's `/api/auth/get-session` (forwarding the incoming cookie).
+- **CORS**: the API allows the web origin (`http://localhost:3000` by default)
+  with credentials enabled.
+- **Response envelope**: every endpoint returns `{ "success": true, "data": ... }`
+  or `{ "success": false, "error": "...", "code": "..." }`.
 
-- [Bun](https://bun.sh/) installed on your machine
-- Node.js 20+ (for compatibility)
+## Run with Docker Compose
 
-### Installation
-
-1. **Clone the repository**
+The fastest way to run the whole stack:
 
 ```bash
-git clone <repository-url>
-cd kanban-challenge
+cp .env.example .env      # optional: set a real AUTH_SECRET
+docker compose up --build
 ```
 
-2. **Install dependencies**
+- Web: http://localhost:3000
+- API: http://localhost:8000 (docs at `/docs`)
+
+On startup the API container runs Alembic migrations and idempotent seeding
+(Kanban Admin + demo board), then serves the app. The SQLite database is
+persisted in the `api-data` volume.
+
+Compose variables (see `.env.example`):
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `AUTH_SECRET` | dev placeholder | API auth secret |
+| `PUBLIC_API_URL` | `http://localhost:8000` | Browser-facing API URL (baked into the web build) |
+| `WEB_ORIGIN` | `http://localhost:3000` | Origin allowed by the API's CORS |
+
+> Note: the web app uses two API URLs — `NEXT_PUBLIC_API_URL` for browser calls
+> (`http://localhost:8000`) and `INTERNAL_API_URL` for server-side/middleware
+> calls between containers (`http://api:8000`). Compose wires both automatically.
+
+To stop and remove containers (keeping the database volume):
 
 ```bash
-bun install
+docker compose down
+# add -v to also delete the database volume
 ```
 
-3. **Set up environment variables**
+## Quick start (without Docker)
 
-Copy the example environment file:
+Run the two services in separate terminals.
+
+### 1. API (backend + database)
 
 ```bash
-cp .env.example .env
+cd api
+cp .env.example .env                     # then set a real AUTH_SECRET
+uv venv && uv pip install -r requirements.txt   # or: python -m venv .venv && pip install -r requirements.txt
+uv run alembic upgrade head              # create the SQLite schema
+uv run python -m app.seeding.seed        # (optional) Kanban Admin + demo board
+uv run uvicorn app.main:app --reload --port 8000
 ```
 
-Edit `.env` and configure the following:
+API is now at `http://localhost:8000` (interactive docs at `/docs`).
 
-```env
-# Database
-DATABASE_URL="file:./sqlite.db"
-
-# Better-Auth Configuration
-# Generate a secret with: openssl rand -base64 32
-BETTER_AUTH_SECRET="your-secret-key-min-32-characters-long"
-BETTER_AUTH_URL="http://localhost:3000"
-
-# Node Environment
-NODE_ENV="development"
-```
-
-**Important:** Generate a secure secret for `BETTER_AUTH_SECRET`:
+### 2. Web (frontend)
 
 ```bash
-openssl rand -base64 32
+cd web
+cp .env.example .env                     # NEXT_PUBLIC_API_URL=http://localhost:8000
+npm install
+npm run dev
 ```
 
-4. **Set up the database**
+App is now at `http://localhost:3000`.
 
-Push the database schema:
+Sign up, and a demo board + a "crowded" stress-test board are provisioned for
+your new account automatically.
 
-```bash
-bun run db:push
-```
+## Migrating from the old monolith
 
-This will create the SQLite database and all necessary tables.
+The old SQLite database (Drizzle + Better Auth) is **not** reused. The API
+manages its own schema via Alembic and its own auth (passwords are re-hashed
+with PBKDF2), so existing users need to register again against the new API.
 
-5. **Seed the database with demo content** *(Optional)*
-
-Add demo content including the Kanban Admin user and a sample board:
-
-```bash
-bun run db:seed
-```
-
-This creates:
-- 🤖 **Kanban Admin** - A special system user who creates demo content
-- 📋 **Demo Board** - "🚀 Welcome to Your Kanban Journey!" with example cards
-- 🌪️ **Crowded Board** - "This is where everyone dropped their daily tasks" packed with thousands of oversized cards for stress testing
-- ✨ **Sample Cards** - Fun, engaging cards showing best practices
-
-The seeding is safe to run multiple times - it will only create content if the Kanban Admin doesn't already exist.
-
-6. **Run the development server**
-
-```bash
-bun run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-## Available Scripts
-
-- `bun run dev` - Start development server with Turbopack
-- `bun run build` - Build for production
-- `bun run start` - Start production server
-- `bun run lint` - Run ESLint
-- `bun run lint:fix` - Fix ESLint errors
-- `bun run typecheck` - Run TypeScript type checking
-- `bun run format:check` - Check code formatting
-- `bun run format:write` - Format code with Prettier
-- `bun run db:push` - Push database schema changes
-- `bun run db:generate` - Generate Drizzle migrations
-- `bun run db:studio` - Open Drizzle Studio (database GUI)
-- `bun run db:seed` - Seed database with demo content (Kanban Admin + demo board)
-  - Automatically provisions the Crowded board for new accounts so you can test UI performance under heavy load.
-
-## Project Structure
-
-```
-src/
-├── app/                    # Next.js app router pages
-│   ├── (auth)/            # Authentication pages
-│   └── (dashboard)/       # Dashboard pages
-├── components/            # Reusable UI components
-│   ├── ui/               # Base UI components
-│   └── sidebar/          # Sidebar navigation
-├── lib/                   # Utilities and API clients
-│   └── api/              # API request functions
-├── server/                # Backend code
-│   ├── api/              # Hono API routes
-│   ├── auth/             # Better Auth configuration
-│   ├── db/               # Drizzle ORM setup
-│   └── services/         # Business logic services
-└── styles/                # Global styles
-```
-
-## Usage
-
-1. **Sign up** for an account at `/sign-up`
-2. **Sign in** at `/sign-in`
-3. **Create a board** from the sidebar
-4. **Add columns** to organize your workflow
-5. **Create cards** and drag them between columns
-6. **Invite team members** (coming soon)
-
-## Development
-
-### Database Management
-
-View and edit your database using Drizzle Studio:
-
-```bash
-bun run db:studio
-```
-
-### Code Quality
-
-Before committing, ensure your code passes all checks:
-
-```bash
-bun run check
-```
-
-This runs both linting and type checking.
-
-## License
-
-MIT
+See [`api/README.md`](api/README.md) and [`web/README.md`](web/README.md) for
+service-specific details.
