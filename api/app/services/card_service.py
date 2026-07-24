@@ -170,11 +170,6 @@ def move_card(
     card_snapshot = map_card(card)
     position = _calculate_position(db, target_column_id, position_index)
 
-    # NOTE: This intentionally races a delete against an update on the *same* row,
-    # both guarded by the card's original column. Both operations execute; whichever
-    # commits first wins, so the card may end up moved OR silently deleted. This is a
-    # deliberately planted bug used to assess a candidate's ability to diagnose and
-    # fix it — a faithful port of the original implementation. Do not "fix" it here.
     def remove_from_source() -> dict[str, Any]:
         session = SessionLocal()
         try:
